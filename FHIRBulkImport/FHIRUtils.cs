@@ -25,14 +25,14 @@ namespace FHIRBulkImport
             HttpStatusCode.TooManyRequests //429
         };
 
-        private static HttpClient _fhirClient = new HttpClient(
-            new SocketsHttpHandler()
-            {
-                ResponseDrainTimeout = TimeSpan.FromSeconds(Utils.GetIntEnvironmentVariable("FBI-POOLEDCON-RESPONSEDRAINSECS", "60")),
-                PooledConnectionLifetime = TimeSpan.FromMinutes(Utils.GetIntEnvironmentVariable("FBI-POOLEDCON-LIFETIME", "5")),
-                PooledConnectionIdleTimeout = TimeSpan.FromMinutes(Utils.GetIntEnvironmentVariable("FBI-POOLEDCON-IDLETO", "2")),
-                MaxConnectionsPerServer = Utils.GetIntEnvironmentVariable("FBI-POOLEDCON-MAXCONNECTIONS", "20")
-            });
+        //private static HttpClient _fhirClient = new HttpClient(
+        //    new SocketsHttpHandler()
+        //    {
+        //        ResponseDrainTimeout = TimeSpan.FromSeconds(Utils.GetIntEnvironmentVariable("FBI-POOLEDCON-RESPONSEDRAINSECS", "60")),
+        //        PooledConnectionLifetime = TimeSpan.FromMinutes(Utils.GetIntEnvironmentVariable("FBI-POOLEDCON-LIFETIME", "5")),
+        //        PooledConnectionIdleTimeout = TimeSpan.FromMinutes(Utils.GetIntEnvironmentVariable("FBI-POOLEDCON-IDLETO", "2")),
+        //        MaxConnectionsPerServer = Utils.GetIntEnvironmentVariable("FBI-POOLEDCON-MAXCONNECTIONS", "20")
+        //    });
         public static async System.Threading.Tasks.Task<FHIRResponse> CallFHIRServer(string path, string body, HttpMethod method, ILogger log)
         {
                 string _bearerToken = null;
@@ -63,6 +63,17 @@ namespace FHIRBulkImport
                 _fhirRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _bearerToken);
                 _fhirRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 _fhirRequest.Content = new StringContent(body, Encoding.UTF8, "application/json");
+
+                log.LogInformation("New HttpClient instance for this call");
+                // JMN init a new client on each try.
+                HttpClient _fhirClient = new HttpClient(
+                    new SocketsHttpHandler()
+                    {
+                        ResponseDrainTimeout = TimeSpan.FromSeconds(Utils.GetIntEnvironmentVariable("FBI-POOLEDCON-RESPONSEDRAINSECS", "60")),
+                        PooledConnectionLifetime = TimeSpan.FromMinutes(Utils.GetIntEnvironmentVariable("FBI-POOLEDCON-LIFETIME", "5")),
+                        PooledConnectionIdleTimeout = TimeSpan.FromMinutes(Utils.GetIntEnvironmentVariable("FBI-POOLEDCON-IDLETO", "2")),
+                        MaxConnectionsPerServer = Utils.GetIntEnvironmentVariable("FBI-POOLEDCON-MAXCONNECTIONS", "20")
+                    });
                 return await _fhirClient.SendAsync(_fhirRequest);
                 
             });
